@@ -1,6 +1,6 @@
 import { GlobalStyle } from './GlobalStyles';
 import { Searchbar } from './Searchbar/Searchbar';
-import { Component } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { fetchImages } from 'api';
 import { Button } from './Button/Button';
@@ -8,76 +8,79 @@ import { Layout } from './Layout';
 import { ImageSkeleton } from './Skeleton/Skeleton';
 import toast, { Toaster } from 'react-hot-toast';
 
-export class App extends Component {
-  state = {
-    searchName: '',
-    images: [],
-    currentPage: 1,
-    error: null,
-    isLoading: false,
-    totalPages: null,
-  };
-  componentDidUpdate(_, prevState) {
-    if (
-      prevState.searchName !== this.state.searchName ||
-      prevState.currentPage !== this.state.currentPage
-    ) {
-      this.showImages();
-    }
-  }
+export function App() {
+  const [searchName, setSearchName] = useState('');
+  const [images, setImages] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(null);
 
-  handleSubmit = searchName => {
-    this.setState({
-      searchName: searchName,
-      images: [],
-      currentPage: 1,
+  const itemRef = useRef();
+  function scroll() {
+    const { height: cardHeight } = itemRef.current.getBoundingClientRect();
+    window.scrollTo({
+      top: cardHeight * 2,
+      behavior: 'smooth',
     });
-  };
-  showImages = async () => {
-    try {
-      const { currentPage, searchName } = this.state;
-      this.setState({ isLoading: true, error: null });
-      const { images, totalPages } = await fetchImages({
-        searchName,
-        currentPage,
-      });
+  }
+  useEffect(() => {
+    if (searchName === '') {
+      return;
+    }
+    async function showImages() {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      this.setState(prevState => ({
-        images: [...prevState.images, ...images],
-      }));
-      this.setState({
-        totalPages,
-      });
-      if (images.length < 1) {
-        toast.error('Sorry, we didn`t find images according to your request.');
+        const { images, totalPages } = await fetchImages({
+          searchName,
+          currentPage,
+        });
+
+        setImages(prevImages => [...prevImages, ...images]);
+        setTotalPages(totalPages);
+        if (images.length < 1) {
+          toast.error(
+            'Sorry, we didn`t find images according to your request.'
+          );
+        }
+      } catch {
+        setError(toast.error("This didn't work.Please try again later !"));
+      } finally {
+        setIsLoading(false);
       }
-    } catch {
-      this.setState({
-        error: toast.error("This didn't work.Please try again later !"),
-      });
-    } finally {
-      this.setState({ isLoading: false });
+    }
+    showImages();
+
+    return () => {};
+  }, [searchName, currentPage]);
+
+  const handleSubmit = searchName => {
+    setSearchName(searchName);
+    setImages([]);
+    setCurrentPage(1);
+    if (searchName === '') {
+      toast.error('Please input search query!');
     }
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({ currentPage: prevState.currentPage + 1 }));
+  const loadMore = () => {
+    setCurrentPage(prevCurrentPage => prevCurrentPage + 1);
+    scroll();
   };
 
-  render() {
-    const { images, isLoading, currentPage, totalPages } = this.state;
-    return (
-      <Layout>
-        <Searchbar onSubmit={this.handleSubmit} />
-        {images.length > 0 && <ImageGallery images={images} />}
-        {isLoading && <ImageSkeleton />}
-        {images.length > 0 && totalPages !== currentPage && !isLoading && (
-          <Button onClick={this.loadMore} />
-        )}
+  return (
+    <Layout>
+      <Searchbar onSubmit={handleSubmit} />
+      {images.length > 0 && <ImageGallery ref={itemRef} images={images} />}
+      {isLoading && <ImageSkeleton />}
+      {images.length > 0 && totalPages !== currentPage && !isLoading && (
+        <Button onClick={loadMore} />
+      )}
 
-        <GlobalStyle />
-        <Toaster position="top-right" />
-      </Layout>
-    );
-  }
+      <GlobalStyle />
+      <Toaster position="top-right" />
+    </Layout>
+  );
 }

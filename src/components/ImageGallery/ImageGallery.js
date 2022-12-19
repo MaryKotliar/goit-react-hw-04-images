@@ -1,12 +1,13 @@
 import PropTypes from 'prop-types';
 import { Gallery, GalleryItem } from './ImageGallery.styled';
 import { GalleryItemContent } from 'components/ImageGalleryItem/ImageGalleryItem';
-export const ImageGallery = ({ images }) => {
+import { forwardRef } from 'react';
+export const ImageGallery = forwardRef(({ images }, ref) => {
   return (
     <>
       <Gallery>
         {images.map(image => (
-          <GalleryItem key={image.id}>
+          <GalleryItem ref={ref} key={image.id}>
             <GalleryItemContent
               image={image.webformatURL}
               largeImage={image.largeImageURL}
@@ -17,7 +18,7 @@ export const ImageGallery = ({ images }) => {
       </Gallery>
     </>
   );
-};
+});
 ImageGallery.propTypes = {
   images: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
