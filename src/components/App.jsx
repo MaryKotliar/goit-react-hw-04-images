@@ -1,6 +1,6 @@
 import { GlobalStyle } from './GlobalStyles';
 import { Searchbar } from './Searchbar/Searchbar';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { fetchImages } from 'api';
 import { Button } from './Button/Button';
