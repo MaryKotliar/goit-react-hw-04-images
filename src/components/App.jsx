@@ -12,18 +12,10 @@ export function App() {
   const [searchName, setSearchName] = useState('');
   const [images, setImages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(null);
 
-  const itemRef = useRef();
-  function scroll() {
-    const { height: cardHeight } = itemRef.current.getBoundingClientRect();
-    window.scrollTo({
-      top: cardHeight * 2,
-      behavior: 'smooth',
-    });
-  }
   useEffect(() => {
     if (searchName === '') {
       return;
@@ -31,22 +23,21 @@ export function App() {
     async function showImages() {
       try {
         setIsLoading(true);
-        setError(null);
 
         const { images, totalPages } = await fetchImages({
           searchName,
           currentPage,
         });
-
-        setImages(prevImages => [...prevImages, ...images]);
-        setTotalPages(totalPages);
         if (images.length < 1) {
           toast.error(
             'Sorry, we didn`t find images according to your request.'
           );
+          return;
         }
+        setImages(prevImages => [...prevImages, ...images]);
+        setTotalPages(totalPages);
       } catch {
-        setError(toast.error("This didn't work.Please try again later !"));
+        toast.error("This didn't work.Please try again later !");
       } finally {
         setIsLoading(false);
       }
@@ -57,23 +48,23 @@ export function App() {
   }, [searchName, currentPage]);
 
   const handleSubmit = searchName => {
+    if (searchName === '') {
+      toast.error('Please input search query!');
+      return;
+    }
     setSearchName(searchName);
     setImages([]);
     setCurrentPage(1);
-    if (searchName === '') {
-      toast.error('Please input search query!');
-    }
   };
 
   const loadMore = () => {
     setCurrentPage(prevCurrentPage => prevCurrentPage + 1);
-    scroll();
   };
 
   return (
     <Layout>
       <Searchbar onSubmit={handleSubmit} />
-      {images.length > 0 && <ImageGallery ref={itemRef} images={images} />}
+      {images.length > 0 && <ImageGallery images={images} />}
       {isLoading && <ImageSkeleton />}
       {images.length > 0 && totalPages !== currentPage && !isLoading && (
         <Button onClick={loadMore} />

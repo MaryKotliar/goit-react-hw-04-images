@@ -21,9 +21,10 @@ export const fetchImages = async ({ searchName, currentPage }) => {
 };
 
 const normalisedImages = images =>
-  images.map(({ id, webformatURL, largeImageURL, tags }) => ({
+  images.map(({ id, webformatURL, largeImageURL, tags }, idx) => ({
     id,
     webformatURL,
     largeImageURL,
     tags,
+    isAnchor: !idx,
   }));
